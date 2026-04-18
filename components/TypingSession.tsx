@@ -1,0 +1,275 @@
+'use client';
+
+import { useState, useEffect, useRef, useCallback, FormEvent } from 'react';
+import { useRouter } from 'next/navigation';
+import { Phrase, loadPhrases, savePhrases } from '@/lib/store';
+import { ArrowLeft, CheckCircle2, Volume2 } from 'lucide-react';
+
+type Mode = 'practice' | 'memorization';
+
+export default function TypingSession({ mode }: { mode: Mode }) {
+  const router = useRouter();
+  const [phrases, setPhrases] = useState<Phrase[]>([]);
+  const [currentPhrase, setCurrentPhrase] = useState<Phrase | null>(null);
+  const [input, setInput] = useState('');
+  const [isCorrect, setIsCorrect] = useState<boolean | null>(null);
+  const [revealStep, setRevealStep] = useState(0);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const restoreInputFocus = useCallback(() => {
+    requestAnimationFrame(() => {
+      inputRef.current?.focus({ preventScroll: true });
+    });
+  }, []);
+
+  const playAudio = useCallback(() => {
+    if (!currentPhrase) return;
+    if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+      window.speechSynthesis.cancel();
+      const msg = new SpeechSynthesisUtterance(currentPhrase.japanese);
+      msg.lang = 'ja-JP';
+      msg.rate = 0.85;
+      window.speechSynthesis.speak(msg);
+    }
+  }, [currentPhrase]);
+
+  useEffect(() => {
+    if (mode === 'practice' && currentPhrase) {
+      const timer = setTimeout(playAudio, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [mode, currentPhrase, playAudio]);
+
+  useEffect(() => {
+    if (isCorrect) {
+      playAudio();
+    }
+  }, [isCorrect, playAudio]);
+
+  useEffect(() => {
+    const allPhrases = loadPhrases();
+    const now = Date.now();
+    // Filter out memorized phrases
+    const available = allPhrases.filter(p => {
+      const memorizedUntil = p.memorizedUntil[mode];
+      return !memorizedUntil || memorizedUntil < now;
+    });
+    
+    // Shuffle
+    const shuffled = available.sort(() => Math.random() - 0.5);
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setPhrases(shuffled);
+    if (shuffled.length > 0) {
+      setCurrentPhrase(shuffled[0]);
+    }
+  }, [mode]);
+
+  const handleNext = () => {
+    setInput('');
+    setIsCorrect(null);
+    setRevealStep(0);
+    setPhrases(prev => {
+      const next = prev.slice(1);
+      if (next.length > 0) {
+        setCurrentPhrase(next[0]);
+      } else {
+        setCurrentPhrase(null);
+      }
+      return next;
+    });
+    setTimeout(() => inputRef.current?.focus(), 100);
+  };
+
+  const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (isCorrect) {
+      handleNext();
+    }
+  };
+
+  const handleMemorized = () => {
+    if (!currentPhrase) return;
+    const allPhrases = loadPhrases();
+    const updated = allPhrases.map(p => {
+      if (p.id === currentPhrase.id) {
+        return {
+          ...p,
+          memorizedUntil: {
+            ...p.memorizedUntil,
+            [mode]: Date.now() + 5 * 24 * 60 * 60 * 1000 // 5 days
+          }
+        };
+      }
+      return p;
+    });
+    savePhrases(updated);
+    handleNext();
+  };
+
+  const checkInput = (val: string) => {
+    setInput(val);
+    if (!currentPhrase) return;
+    
+    if (val === currentPhrase.japanese) {
+      setIsCorrect(true);
+    } else if (currentPhrase.japanese.startsWith(val)) {
+      setIsCorrect(null); // typing in progress
+    }
+  };
+
+  if (phrases.length === 0 && !currentPhrase) {
+    return (
+      <div className="min-h-[100dvh] bg-gray-50 flex flex-col items-center justify-center p-4">
+        <h2 className="text-2xl font-bold mb-4">Done!</h2>
+        <p className="text-gray-600 mb-8">No phrases are currently available for study.</p>
+        <button onClick={() => router.push('/')} className="px-6 py-3 bg-blue-600 text-white rounded-xl font-semibold">
+          Back to Home
+        </button>
+      </div>
+    );
+  }
+
+  if (!currentPhrase) return null;
+
+  return (
+    <div className="min-h-[100dvh] bg-gray-50 flex flex-col">
+      <header className="flex items-center p-4 bg-white shadow-sm">
+        <button onClick={() => router.push('/')} className="p-2 mr-4">
+          <ArrowLeft className="w-6 h-6" />
+        </button>
+        <h1 className="text-xl font-bold">{mode === 'practice' ? 'Practice Mode' : 'Memorization Mode'}</h1>
+        <div className="ml-auto text-sm text-gray-500">
+          Remaining: {phrases.length}
+        </div>
+      </header>
+
+      <main className="flex-1 min-h-0 overflow-y-auto p-4 pb-[max(1rem,env(safe-area-inset-bottom))] flex flex-col max-w-md w-full mx-auto">
+        <div
+          onPointerDown={(e) => {
+            if (mode === 'memorization') {
+              e.preventDefault();
+            }
+          }}
+          onClick={() => {
+            if (mode === 'memorization') {
+              setRevealStep(prev => {
+                if (prev < 2) {
+                  return prev + 1;
+                }
+                return 1;
+              });
+              restoreInputFocus();
+            }
+          }}
+          className={`bg-white rounded-2xl shadow-sm p-6 mb-6 flex-1 flex flex-col justify-center items-center text-center space-y-4 relative ${
+            mode === 'memorization' ? 'cursor-pointer' : ''
+          }`}
+        >
+          <button 
+            onPointerDown={(e) => {
+              e.preventDefault();
+            }}
+            onClick={(e) => {
+              e.stopPropagation();
+              playAudio();
+              restoreInputFocus();
+            }}
+            className="absolute top-4 right-4 p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-full transition-colors"
+            title="Play audio"
+          >
+            <Volume2 className="w-6 h-6" />
+          </button>
+          
+          <div className="text-xl font-bold text-gray-900">
+            {currentPhrase.thai} / {currentPhrase.english}
+          </div>
+          
+          {mode === 'practice' && (
+            <div className="mt-6 space-y-2">
+              <div className="text-4xl font-script text-gray-900">
+                {currentPhrase.japanese}
+              </div>
+              <div className="text-lg text-gray-500 font-mono">
+                {currentPhrase.romaji}
+              </div>
+            </div>
+          )}
+
+          {mode === 'memorization' && revealStep >= 1 && (
+            <div className="mt-6 space-y-2">
+              <div className="text-lg text-gray-500 font-mono">
+                {currentPhrase.romaji}
+              </div>
+              {revealStep >= 2 && (
+                <div className="text-4xl font-script text-gray-900">
+                  {currentPhrase.japanese}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
+        <form className="space-y-4" onSubmit={handleSubmit}>
+          <div className="relative">
+            <input
+              ref={inputRef}
+              type="text"
+              name="japanese-typing-input"
+              value={input}
+              onChange={(e) => checkInput(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && isCorrect && !e.nativeEvent.isComposing) {
+                  e.preventDefault();
+                  handleNext();
+                }
+              }}
+              onFocus={(e) => {
+                const target = e.currentTarget;
+                requestAnimationFrame(() => {
+                  if (target && target.isConnected) {
+                    target.scrollIntoView({ block: 'center', behavior: 'smooth' });
+                  }
+                });
+              }}
+              placeholder="Type Japanese..."
+              className={`w-full p-4 text-2xl font-script text-center border-2 rounded-xl focus:outline-none transition-colors ${
+                isCorrect ? 'border-green-500 bg-green-50 text-green-700' : 'border-gray-200 focus:border-blue-500'
+              }`}
+              autoFocus
+              autoComplete="new-password"
+              autoCorrect="off"
+              autoCapitalize="off"
+              spellCheck={false}
+              enterKeyHint="done"
+            />
+            {isCorrect && (
+              <div className="absolute right-4 top-1/2 -translate-y-1/2 text-green-500">
+                <CheckCircle2 className="w-8 h-8" />
+              </div>
+            )}
+          </div>
+
+          {isCorrect ? (
+            <div className="grid grid-cols-2 gap-4 animate-in fade-in slide-in-from-bottom-4">
+              <button
+                type="button"
+                onClick={handleMemorized}
+                className="p-4 bg-green-600 text-white rounded-xl font-bold hover:bg-green-700 transition-colors"
+              >
+                Memorized
+                <br />
+                (Hide for 5 days)
+              </button>
+              <button
+                type="button"
+                onClick={handleNext}
+                className="p-4 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 transition-colors"
+              >
+                Next
+              </button>
+            </div>
+          ) : null}
+        </form>
+      </main>
+    </div>
+  );
+}
