@@ -18,7 +18,7 @@ const DEFAULT_PHRASES: Phrase[] = [
   { id: '3', japanese: 'だいじょうぶ', romaji: 'daijoubu', thai: 'ไม่เป็นไร', english: 'It is okay', memorizedUntil: { practice: null, memorization: null } },
   { id: '4', japanese: 'おはよう', romaji: 'ohayou', thai: 'อรุณสวัสดิ์', english: 'Good morning', memorizedUntil: { practice: null, memorization: null } },
   { id: '5', japanese: 'おやすみ', romaji: 'oyasumi', thai: 'ราตรีสวัสดิ์', english: 'Good night', memorizedUntil: { practice: null, memorization: null } },
-  { id: '6', japanese: 'おつかれ ー', romaji: 'otsukaree', thai: 'เหนื่อยมาเยอะเลยนะ', english: 'You did a lot today', memorizedUntil: { practice: null, memorization: null } },
+  { id: '6', japanese: 'おつかれー', romaji: 'otsukaree', thai: 'เหนื่อยมาเยอะเลยนะ', english: 'You did a lot today', memorizedUntil: { practice: null, memorization: null } },
   { id: '7', japanese: 'おもしろい', romaji: 'omoshiroi', thai: 'น่าสนใจ', english: 'Interesting', memorizedUntil: { practice: null, memorization: null } },
   { id: '8', japanese: '家族', romaji: 'kazoku', thai: 'ครอบครัว', english: 'Family', memorizedUntil: { practice: null, memorization: null } },
   { id: '9', japanese: '彼氏', romaji: 'kareshi', thai: 'แฟนหนุ่ม', english: 'Boyfriend', memorizedUntil: { practice: null, memorization: null } },

@@ -4,3 +4,53 @@
   --font-sans: var(--font-google-sans), var(--font-noto-jp), ui-sans-serif, system-ui, sans-serif;
   --font-script: var(--font-google-sans), var(--font-noto-jp), var(--font-noto-thai), sans-serif;
 }
+
+@keyframes sakura-fall {
+  0% {
+    transform: translate3d(0, -12vh, 0) rotate(0deg);
+  }
+  100% {
+    transform: translate3d(0, 112vh, 0) rotate(360deg);
+  }
+}
+
+@keyframes sakura-drift {
+  0% {
+    margin-left: -1.5vw;
+  }
+  50% {
+    margin-left: 2vw;
+  }
+  100% {
+    margin-left: -2.2vw;
+  }
+}
+
+.sakura-petal {
+  --petal-size: 16px;
+  --petal-drift-duration: 8s;
+  --petal-opacity: 0.6;
+  position: absolute;
+  top: -10vh;
+  width: var(--petal-size);
+  height: calc(var(--petal-size) * 0.72);
+  display: block;
+  border-radius: 70% 15% 70% 15%;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.95), rgba(255, 208, 220, 0.92) 45%, rgba(244, 163, 184, 0.96));
+  box-shadow: 0 0 10px rgba(255, 182, 193, 0.18);
+  opacity: var(--petal-opacity);
+  transform-origin: center;
+  animation:
+    sakura-fall linear infinite,
+    sakura-drift ease-in-out infinite alternate;
+  animation-duration: inherit, var(--petal-drift-duration);
+}
+
+.sakura-petal::after {
+  content: "";
+  position: absolute;
+  inset: 14% 22% 26% 18%;
+  border-radius: 100% 0 100% 0;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.85), rgba(255, 255, 255, 0));
+  transform: rotate(-14deg);
+}
