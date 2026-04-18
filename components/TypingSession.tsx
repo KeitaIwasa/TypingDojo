@@ -118,7 +118,7 @@ export default function TypingSession({ mode }: { mode: Mode }) {
 
   if (phrases.length === 0 && !currentPhrase) {
     return (
-      <div className="min-h-[100dvh] bg-gray-50 flex flex-col items-center justify-center p-4">
+      <div className="min-h-[100dvh] bg-rose-50 flex flex-col items-center justify-center p-4">
         <h2 className="text-2xl font-bold mb-4">Done!</h2>
         <p className="text-gray-600 mb-8">No phrases are currently available for study.</p>
         <button onClick={() => router.push('/')} className="px-6 py-3 bg-blue-600 text-white rounded-xl font-semibold">
@@ -131,7 +131,7 @@ export default function TypingSession({ mode }: { mode: Mode }) {
   if (!currentPhrase) return null;
 
   return (
-    <div className="min-h-[100dvh] bg-gray-50 flex flex-col">
+    <div className="min-h-[100dvh] bg-rose-50 flex flex-col">
       <header className="flex items-center p-4 bg-white shadow-sm">
         <button onClick={() => router.push('/')} className="p-2 mr-4">
           <ArrowLeft className="w-6 h-6" />

@@ -82,7 +82,7 @@ export default function ManagePhrases() {
     : phrases;
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
+    <div className="min-h-screen bg-rose-50 flex flex-col">
       <header className="flex items-center p-4 bg-white shadow-sm sticky top-0 z-10">
         <button onClick={() => router.push('/')} className="p-2 mr-4">
           <ArrowLeft className="w-6 h-6" />
